@@ -45,7 +45,6 @@ func consume(q <-chan Message) {
 
 func dedupe(source <-chan Message, frame time.Duration) chan Message {
 	sink := make(chan Message)
-	ticker := time.NewTicker(frame)
 	go func(s chan Message, t *time.Ticker) {
 		buffer := make(map[string]Message, 0)
 		for {
@@ -56,14 +55,10 @@ func dedupe(source <-chan Message, frame time.Duration) chan Message {
 				}
 				buffer = make(map[string]Message, 0)
 			case m := <-source:
-				if _, ok := buffer[m.Content]; !ok {
-					buffer[m.Content] = m
-				} else {
-					log.Println("duplicate", m, "-> drop!")
-				}
+				buffer[m.Content] = m
 			}
 		}
-	}(sink, ticker)
+	}(sink, time.NewTicker(frame))
 	return sink
 }
 
